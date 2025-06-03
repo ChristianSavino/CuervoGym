@@ -90,7 +90,7 @@
         const socioId = sessionStorage.getItem("Socio");
 
         if (!socioId) {
-            window.location.href = "/index.html";
+            window.location.href = "/CuervoGym/index.html";
         } else {
             const socio = {
                 nombre: "Juan",
@@ -158,7 +158,7 @@
             // Botón cerrar sesión limpia sessionStorage y redirige a index.html
             document.getElementById('btn-logout').addEventListener('click', () => {
                 sessionStorage.clear();
-                window.location.href = 'index.html'; // Cambiar si tu login está en otra ruta
+                window.location.href = '/CuervoGym/index.html'; // Cambiar si tu login está en otra ruta
             });
         }
     </script>
