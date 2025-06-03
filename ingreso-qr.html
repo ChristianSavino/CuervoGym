@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="utf-8" />
     <title>Validación de QR - El Cuervo Gym</title>
@@ -87,80 +88,99 @@
     <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
     <script>
-        const socioId = sessionStorage.getItem("SocioId");
+        const apiBase = "https://localhost:7019/api/socios";
+        const idSocio = sessionStorage.getItem("IdSocio");
 
-        if (!socioId) {
+        if (!idSocio) {
+            alert("No se encontró el ID del socio. Redirigiendo...");
             window.location.href = "/CuervoGym/index.html";
-        } else {
-            const socio = {
-                nombre: "Juan",
-                apellido: "Pérez",
-                id: 12345,
-                documento: 98765432
-            };
-            const diasAtraso = 0;          // Cambia estos valores para probar estados
-            const ingresosPrevios = 0;
-            const parametroMaxDias = 5;
-
-            // Mostrar año actual en footer
-            document.getElementById('anio-actual').textContent = new Date().getFullYear();
-
-            // Mostrar saludo con nombre (simulado sessionStorage)
-            const nombreGuardado = sessionStorage.getItem('NombreSocio') || socio.nombre;
-            document.getElementById('saludo-usuario').textContent = `Hola, ${nombreGuardado}!`;
-
-            // Definir estado y estilos según lógica
-            let estado = "success"; // verde por defecto (puede pasar)
-            if (diasAtraso > 0 || ingresosPrevios > 0) {
-                estado = "warning";
-            }
-            if (diasAtraso > parametroMaxDias || ingresosPrevios > 1) {
-                estado = "danger";
-            }
-
-            const cardHeader = document.getElementById('card-header');
-            const estadoText = document.getElementById('estado-text');
-            const mensajeStaff = document.getElementById('mensaje-staff');
-            const mensajeSesion = document.getElementById('mensaje-sesion');
-
-            // Clases y textos según estado
-            let bgClass = 'bg-success';
-            let badgeClass = 'badge bg-success';
-            let textEstado = 'Puede Pasar';
-            let textStaff = 'Muéstrale esto al staff';
-            let textSesion = '¡No cierres sesión!';
-
-            if (estado === 'warning') {
-                bgClass = 'bg-warning text-dark';
-                badgeClass = 'badge bg-warning text-dark';
-                textEstado = 'Atrasado / 1 Ingreso';
-            } else if (estado === 'danger') {
-                bgClass = 'bg-danger';
-                badgeClass = 'badge bg-danger';
-                textEstado = 'Muy Atrasado / +1 Ingreso';
-            }
-
-            // Aplicar color al header
-            cardHeader.className = `card-header text-center text-white ${bgClass}`;
-
-            // Mostrar badges con texto y clase correcta
-            estadoText.innerHTML = `<span class="${badgeClass}">${textEstado}</span>`;
-            mensajeStaff.innerHTML = `<span class="${badgeClass}">${textStaff}</span>`;
-            mensajeSesion.innerHTML = `<span class="${badgeClass}">${textSesion}</span>`;
-
-            // Cargar datos socio en el body
-            document.getElementById('nombre-socio').textContent = `${socio.nombre} ${socio.apellido}`;
-            document.getElementById('numero-socio').textContent = socio.id;
-            document.getElementById('documento-socio').textContent = socio.documento;
-            document.getElementById('dias-atraso').textContent = diasAtraso;
-            document.getElementById('ingresos-previos').textContent = ingresosPrevios;
-
-            // Botón cerrar sesión limpia sessionStorage y redirige a index.html
-            document.getElementById('btn-logout').addEventListener('click', () => {
-                sessionStorage.clear();
-                window.location.href = '/CuervoGym/index.html'; // Cambiar si tu login está en otra ruta
-            });
         }
+
+        async function obtenerDatos() {
+            try {
+                const resSocio = await fetch(`${apiBase}/${idSocio}`);
+                const socio = await resSocio.json();
+
+                const resParametro = await fetch(`${apiBase}/parametro/diasCuotaMax`);
+                const parametroMaxDias = await resParametro.json();
+
+                const resIngresos = await fetch(`${apiBase}/ingresos/${idSocio}`);
+                const ingresos = await resIngresos.json();
+                const ingresosPrevios = ingresos.length;
+
+                const hoy = new Date();
+                const vencimiento = new Date(socio.proximoVencimientoCuota);
+                const diffMs = hoy - vencimiento;
+                const diasAtraso = diffMs > 0 ? Math.floor(diffMs / (1000 * 60 * 60 * 24)) : 0;
+
+                document.getElementById('anio-actual').textContent = new Date().getFullYear();
+
+                const nombreGuardado = sessionStorage.getItem('NombreSocio') || socio.nombre;
+                document.getElementById('saludo-usuario').textContent = `Hola, ${nombreGuardado}!`;
+
+                let estado = "success";
+                if (diasAtraso > 0 || ingresosPrevios > 0) estado = "warning";
+                if (diasAtraso > parametroMaxDias || ingresosPrevios > 1) estado = "danger";
+
+                let bgClass = 'bg-success';
+                let badgeClass = 'badge bg-success';
+                let textEstado = 'Puede Pasar';
+                let textStaff = 'Muéstrale esto al staff';
+                let textSesion = '¡No cierres sesión!';
+
+                if (estado === 'warning') {
+                    bgClass = 'bg-warning text-dark';
+                    badgeClass = 'badge bg-warning text-dark';
+                    textEstado = 'Atrasado / 1 Ingreso';
+                } else if (estado === 'danger') {
+                    bgClass = 'bg-danger';
+                    badgeClass = 'badge bg-danger';
+                    textEstado = 'Muy Atrasado / +1 Ingreso';
+                }
+
+                let tipoIngreso = 1;
+                if (estado === 'warning') tipoIngreso = 2;
+                else if (estado === 'danger') tipoIngreso = 3;
+
+                const nuevoIngreso = {
+                    fechaIngreso: new Date().toISOString().replace('Z', ''),
+                    idSocio: socio.id,
+                    estado: 1,
+                    tipo: tipoIngreso
+                };
+
+                await fetch(`${apiBase}/ingreso`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(nuevoIngreso)
+                });
+
+                // Actualizar UI
+                document.getElementById('card-header').className = `card-header text-center text-white ${bgClass}`;
+                document.getElementById('estado-text').innerHTML = `<span class="${badgeClass}">${textEstado}</span>`;
+                document.getElementById('mensaje-staff').innerHTML = `<span class="${badgeClass}">${textStaff}</span>`;
+                document.getElementById('mensaje-sesion').innerHTML = `<span class="${badgeClass}">${textSesion}</span>`;
+                document.getElementById('nombre-socio').textContent = `${socio.nombre} ${socio.apellido}`;
+                document.getElementById('numero-socio').textContent = socio.id;
+                document.getElementById('documento-socio').textContent = socio.documento;
+                document.getElementById('dias-atraso').textContent = diasAtraso;
+                document.getElementById('ingresos-previos').textContent = ingresosPrevios;
+
+            } catch (err) {
+                console.error("Error al cargar los datos del socio:", err);
+                alert("Error al cargar datos. Intenta nuevamente.");
+            }
+        }
+
+        document.getElementById('btn-logout').addEventListener('click', () => {
+            sessionStorage.clear();
+            window.location.href = '/CuervoGym/index.html';
+        });
+
+        window.onload = obtenerDatos;
     </script>
 </body>
+
 </html>
