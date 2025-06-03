@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Menú Socio - El Cuervo Gym</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+</head>
+<body>
+
+  <!-- Layout similar a _LayoutUsuario -->
+  <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <div class="container">
+      <a class="navbar-brand" href="#">El Cuervo Gym</a>
+      <div class="collapse navbar-collapse justify-content-end">
+        <button id="logoutBtn" class="btn btn-outline-light">Cerrar Sesión</button>
+      </div>
+    </div>
+  </nav>
+
+  <main class="container mt-5">
+    <h2 class="mb-4">Detalles de Tu Membresía</h2>
+
+    <div id="datosSocio" class="card mb-4 d-none">
+      <div class="card-body" id="socioBody"></div>
+    </div>
+
+    <h3 class="mb-3">Últimos Pagos</h3>
+    <div id="tablaPagosContainer"></div>
+  </main>
+
+  <script>
+    // Simulación de base de datos
+    const sociosDB = {
+      "1001": {
+        Nombre: "Juan",
+        Apellido: "Pérez",
+        Documento: "12345678",
+        Id: 1001,
+        Telefono: "555-1234",
+        ObraSocial: "OSDE",
+        NumeroObraSocial: "987654321",
+        NumeroEmergencia: "911",
+        ContactoEmergencia: "María Pérez",
+        FechaSubscripcion: "2024-01-01",
+        ProximoVencimientoCuota: "2025-07-01",
+        UltimosPagos: [
+          { FechaPago: "2025-01-01", Monto: 1200.00, MetodoPago: "Tarjeta de Crédito" },
+          { FechaPago: "2024-12-01", Monto: 1200.00, MetodoPago: "Efectivo" }
+        ]
+      }
+    };
+
+    // Obtener socio desde sessionStorage
+    const socioId = sessionStorage.getItem("userId");
+
+    if (!socioId) {
+      window.location.href = "index.html";
+    } else {
+      const socio = sociosDB[socioId];
+
+      // Mostrar datos personales
+      const body = document.getElementById("socioBody");
+      body.innerHTML = `
+        <h5 class="card-title">${socio.Nombre} ${socio.Apellido}</h5>
+        <p class="card-text"><strong>Documento:</strong> ${socio.Documento}</p>
+        <p class="card-text"><strong>Número de Socio:</strong> ${socio.Id}</p>
+        <p class="card-text"><strong>Teléfono:</strong> ${socio.Telefono}</p>
+        <p class="card-text"><strong>Obra Social:</strong> ${socio.ObraSocial}</p>
+        <p class="card-text"><strong>Número de Obra Social:</strong> ${socio.NumeroObraSocial}</p>
+        <p class="card-text"><strong>Número de Emergencia:</strong> ${socio.NumeroEmergencia}</p>
+        <p class="card-text"><strong>Contacto de Emergencia:</strong> ${socio.ContactoEmergencia}</p>
+        <p class="card-text"><strong>Fecha de Subscripción:</strong> ${formatDate(socio.FechaSubscripcion)}</p>
+        <p class="card-text"><strong>Próximo Vencimiento de Cuota:</strong> ${formatDate(socio.ProximoVencimientoCuota)}</p>
+      `;
+      document.getElementById("datosSocio").classList.remove("d-none");
+
+      // Mostrar tabla de pagos
+      const pagosHTML = socio.UltimosPagos?.length
+        ? `
+          <table class="table table-striped">
+            <thead class="table-dark">
+              <tr>
+                <th>Fecha de Pago</th>
+                <th>Monto</th>
+                <th>Tipo de Pago</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${socio.UltimosPagos.map(p => `
+                <tr>
+                  <td>${formatDate(p.FechaPago)}</td>
+                  <td>$ ${p.Monto.toFixed(2)}</td>
+                  <td>${p.MetodoPago}</td>
+                </tr>`).join("")}
+            </tbody>
+          </table>
+        `
+        : `<p>No tienes pagos registrados.</p>`;
+
+      document.getElementById("tablaPagosContainer").innerHTML = pagosHTML;
+    }
+
+    // Función utilitaria para fechas
+    function formatDate(isoDate) {
+      const [y, m, d] = isoDate.split("-");
+      return `${d}/${m}/${y}`;
+    }
+
+    // Cerrar sesión
+    document.getElementById("logoutBtn").addEventListener("click", () => {
+      sessionStorage.removeItem("Socio");
+      window.location.href = "index.html";
+    });
+  </script>
+</body>
+</html>
