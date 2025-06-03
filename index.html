@@ -80,7 +80,7 @@
                     return;
                 }
 
-                sessionStorage.setItem('userId', result.id);
+                sessionStorage.setItem('SocioId', result.id);
 
                 const params = new URLSearchParams(window.location.search);
                 if (params.get('qr') === 'true') {
